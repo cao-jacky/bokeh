@@ -40,6 +40,3 @@ export class LayoutCanvas extends Model
         bottom: @_bottom.value,
       }
   }
-
-  dump_layout: () ->
-    console.log(this.toString(), @layout_bbox)
