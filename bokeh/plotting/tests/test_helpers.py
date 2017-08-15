@@ -1,9 +1,10 @@
+import pandas as pd
 import pytest
 
 from bokeh.models import ColumnDataSource
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.scales import LinearScale, LogScale, CategoricalScale
-from bokeh.plotting.helpers import _get_legend_item_label, _get_scale, _get_range, _stack
+from bokeh.plotting.helpers import _get_legend_item_label, _get_scale, _get_range, _stack, _graph
 
 def test__stack_raises_when_spec_in_kwargs():
     with pytest.raises(ValueError) as e:
@@ -58,6 +59,26 @@ def test__stack_broadcast_with_list_kwargs():
         assert list(kw['end']['expr'].fields) == stackers[:(i+1)]
         assert kw['foo'] == [10, 20, 30, 40][i]
         assert kw['bar'] == "baz"
+
+def test__graph_handles_column_data_sources():
+    node_source, edge_source = ColumnDataSource(data=dict(index=[])), ColumnDataSource(data=dict(start=[], end=[]))
+    kws = _graph(node_source, edge_source)
+    assert kws['node_renderer'].data_source == node_source
+    assert kws['edge_renderer'].data_source == edge_source
+
+def test__graph_handles_pandas_dataframe():
+    node_source, edge_source = pd.DataFrame(dict(meta=[1])), pd.DataFrame(dict(start=[2], end=[3]))
+    kws = _graph(node_source, edge_source)
+    assert kws['node_renderer'].data_source.data['index'] == [0]
+    assert kws['edge_renderer'].data_source.data['start'].values == [2]
+    assert kws['edge_renderer'].data_source.data['end'].values == [3]
+
+def test__graph_handles_kwargs():
+    node_source, edge_source = None, None
+    kwargs = dict(x_range_name="foo", y_range_name="bar")
+    kws = _graph(node_source, edge_source, **kwargs)
+    assert kws['x_range_name'] == "foo"
+    assert kws['y_range_name'] == "bar"
 
 # _get_legend_item_label
 def test_if_legend_is_something_exotic_that_it_is_passed_directly_to_label():

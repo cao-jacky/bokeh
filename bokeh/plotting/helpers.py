@@ -19,6 +19,7 @@ from ..models import (
     SaveTool, Range, Range1d, UndoTool, RedoTool, ResetTool, ResizeTool, Tool,
     WheelPanTool, WheelZoomTool, ColumnarDataSource, ColumnDataSource, GlyphRenderer,
     LogScale, LinearScale, CategoricalScale)
+from ..models.renderers import _DEFAULT_NODE_RENDERER, _DEFAULT_EDGE_RENDERER
 
 from ..core.properties import ColorSpec, Datetime, value, field
 from ..transform import stack
@@ -67,6 +68,24 @@ def _stack(stackers, spec0, spec1, **kw):
         _kw.append(d)
 
     return _kw
+
+def _graph(node_source, edge_source, **kwargs):
+    if pd and isinstance(node_source, pd.DataFrame):
+        node_source = ColumnDataSource(node_source)
+    if pd and isinstance(edge_source, pd.DataFrame):
+        edge_source = ColumnDataSource(edge_source)
+
+    node_renderer = kwargs.get('node_renderer', _DEFAULT_NODE_RENDERER())
+    node_renderer.data_source = node_source
+
+    edge_renderer = kwargs.get('edge_renderer', _DEFAULT_EDGE_RENDERER())
+    edge_renderer.data_source = edge_source
+
+    kwargs["node_renderer"] = node_renderer
+    kwargs["edge_renderer"] = edge_renderer
+
+    return kwargs
+
 
 def get_default_color(plot=None):
     colors = [
