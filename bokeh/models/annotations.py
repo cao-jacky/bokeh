@@ -7,8 +7,7 @@ from __future__ import absolute_import
 from six import string_types
 
 from ..core.enums import (AngleUnits, Dimension, FontStyle, LegendClickPolicy, LegendLocation,
-                          Orientation, RenderMode, SpatialUnits, VerticalAlign, TextAlign,
-                          TooltipAttachment)
+                          Orientation, RenderMode, SpatialUnits, TextAlign)
 from ..core.has_props import abstract
 from ..core.properties import (Angle, AngleSpec, Auto, Bool, ColorSpec, Datetime, Dict, DistanceSpec, Either,
                                Enum, Float, FontSizeSpec, Include, Instance, Int, List, NumberSpec, Override,
@@ -23,7 +22,7 @@ from .formatters import BasicTickFormatter, TickFormatter
 from .mappers import ContinuousColorMapper
 from .renderers import GlyphRenderer, Renderer
 from .sources import ColumnDataSource, DataSource
-from .tickers import BasicTicker, ContinuousTicker
+from .tickers import BasicTicker, Ticker
 
 @abstract
 class Annotation(Renderer):
@@ -42,23 +41,6 @@ class TextAnnotation(Annotation):
     ''' Base class for text annotation models such as labels and titles.
 
     '''
-
-    render_mode = Enum(RenderMode, default="canvas", help="""
-    Specifies whether the text is rendered as a canvas element or as an
-    css element overlaid on the canvas. The default mode is "canvas".
-
-    .. note::
-        The CSS labels won't be present in the output using the "save" tool.
-
-    .. warning::
-        Not all visual styling properties are supported if the render_mode is
-        set to "css". The border_line_dash property isn't fully supported and
-        border_line_dash_offset isn't supported at all. Setting text_alpha will
-        modify the opacity of the entire background box and border in addition
-        to the text. Finally, clipping Label annotations inside of the plot
-        area isn't supported in "css" mode.
-
-    """)
 
 class LegendItem(Model):
     '''
@@ -126,9 +108,7 @@ class Legend(Annotation):
     """)
 
     inactive_props = Include(FillProps, help="""
-    The %s for the legend item style when inactive. These control an overlay
-    on the item that can be used to obscure it when the corresponding glyph
-    is inactive (e.g. by making it semi-transparent).
+    The %s for the legend background style when inactive.
     """)
 
     click_policy = Enum(LegendClickPolicy, default="none", help="""
@@ -141,7 +121,7 @@ class Legend(Annotation):
 
     inactive_fill_color = Override(default="white")
 
-    inactive_fill_alpha = Override(default=0.7)
+    inactive_fill_alpha = Override(default=0.9)
 
     label_props = Include(TextProps, help="""
     The %s for the legend labels.
@@ -176,8 +156,7 @@ class Legend(Annotation):
     """)
 
     padding = Int(10, help="""
-    Amount of padding around the contents of the legend. Only applicable when
-    when border is visible, otherwise collapses to 0.
+    Amount of padding around the contents of the legend.
     """)
 
     spacing = Int(3, help="""
@@ -261,7 +240,7 @@ class ColorBar(Annotation):
     The distance (in pixels) to separate the title from the color bar.
     """)
 
-    ticker = Instance(ContinuousTicker, default=lambda: BasicTicker(), help="""
+    ticker = Instance(Ticker, default=lambda: BasicTicker(), help="""
     A Ticker to use for computing locations of axis components.
     """)
 
@@ -528,7 +507,8 @@ class Band(Annotation):
     """)
 
     dimension = Enum(Dimension, default='height', help="""
-    The direction of the band.
+    The direction of the band can be specified by setting this property 
+    to ``height`` (``y`` direction) or ``dimension`` (``x`` direction).
     """)
 
     source = Instance(DataSource, default=lambda: ColumnDataSource(), help="""
@@ -664,6 +644,23 @@ class Label(TextAnnotation):
     rendering an annotation on the plot. If unset, use the default y-range.
     """)
 
+    render_mode = Enum(RenderMode, default="canvas", help="""
+    Specifies whether the text is rendered as a canvas element or as an
+    css element overlaid on the canvas. The default mode is "canvas".
+
+    .. note::
+        The CSS labels won't be present in the output using the "save" tool.
+
+    .. warning::
+        Not all visual styling properties are supported if the render_mode is
+        set to "css". The border_line_dash property isn't fully supported and
+        border_line_dash_offset isn't supported at all. Setting text_alpha will
+        modify the opacity of the entire background box and border in addition
+        to the text. Finally, clipping Label annotations inside of the plot
+        area isn't supported in "css" mode.
+
+    """)
+
 class LabelSet(TextAnnotation):
     ''' Render multiple text labels as annotations.
 
@@ -765,6 +762,23 @@ class LabelSet(TextAnnotation):
     rendering annotations on the plot. If unset, use the default y-range.
     """)
 
+    render_mode = Enum(RenderMode, default="canvas", help="""
+    Specifies whether the text is rendered as a canvas element or as an
+    css element overlaid on the canvas. The default mode is "canvas".
+
+    .. note::
+        The CSS labels won't be present in the output using the "save" tool.
+
+    .. warning::
+        Not all visual styling properties are supported if the render_mode is
+        set to "css". The border_line_dash property isn't fully supported and
+        border_line_dash_offset isn't supported at all. Setting text_alpha will
+        modify the opacity of the entire background box and border in addition
+        to the text. Finally, clipping Label annotations inside of the plot
+        area isn't supported in "css" mode.
+
+    """)
+
 class PolyAnnotation(Annotation):
     ''' Render a shaded polygonal region as an annotation.
 
@@ -814,33 +828,6 @@ class PolyAnnotation(Annotation):
 
     fill_color = Override(default="#fff9ba")
 
-class Slope(Annotation):
-    """ Render a sloped line as an annotation.
-
-    """
-
-    gradient = Float(help="""
-    The gradient of the line, in data units
-    """)
-
-    y_intercept = Float(help="""
-    The y intercept of the line, in data units
-    """)
-
-    x_range_name = String('default', help="""
-    A particular (named) x-range to use for computing screen locations when
-    rendering annotations on the plot. If unset, use the default x-range.
-    """)
-
-    y_range_name = String('default', help="""
-    A particular (named) y-range to use for computing screen locations when
-    rendering annotations on the plot. If unset, use the default y-range.
-    """)
-
-    line_props = Include(LineProps, use_prefix=False, help="""
-    The %s values for the line.
-    """)
-
 class Span(Annotation):
     """ Render a horizontal or vertical line span.
 
@@ -856,7 +843,8 @@ class Span(Annotation):
     """)
 
     dimension = Enum(Dimension, default='width', help="""
-    The direction of the span.
+    The direction of the band can be specified by setting this property 
+    to ``height`` (``y`` direction) or ``dimension`` (``x`` direction).
     """)
 
     x_range_name = String('default', help="""
@@ -892,12 +880,9 @@ class Title(TextAnnotation):
     The text value to render.
     """)
 
-    vertical_align = Enum(VerticalAlign, default='bottom', help="""
-    Aligment of the text in its enclosing space, *across* the direction of the text.
-    """)
-
     align = Enum(TextAlign, default='left', help="""
-    Aligment of the text in its enclosing space, *along* the direction of the text.
+    Location to align the title text.
+
     """)
 
     offset = Float(default=0, help="""
@@ -964,6 +949,23 @@ class Title(TextAnnotation):
 
     border_line_color = Override(default=None)
 
+    render_mode = Enum(RenderMode, default="canvas", help="""
+    Specifies whether the text is rendered as a canvas element or as an
+    css element overlaid on the canvas. The default mode is "canvas".
+
+    .. note::
+        The CSS labels won't be present in the output using the "save" tool.
+
+    .. warning::
+        Not all visual styling properties are supported if the render_mode is
+        set to "css". The border_line_dash property isn't fully supported and
+        border_line_dash_offset isn't supported at all. Setting text_alpha will
+        modify the opacity of the entire background box and border in addition
+        to the text. Finally, clipping Label annotations inside of the plot
+        area isn't supported in "css" mode.
+
+    """)
+
 class Tooltip(Annotation):
     ''' Render a tooltip.
 
@@ -974,8 +976,8 @@ class Tooltip(Annotation):
     '''
     level = Override(default="overlay")
 
-    attachment = Enum(TooltipAttachment, help="""
-    Whether the tooltip should be displayed to the left or right of the cursor
+    attachment = Enum("horizontal", "vertical", "left", "right", "above", "below", help="""
+    Whether the tooltip should display to the left or right off the cursor
     position or above or below it, or if it should be automatically placed
     in the horizontal or vertical dimension.
     """)
@@ -1019,7 +1021,8 @@ class Whisker(Annotation):
     """)
 
     dimension = Enum(Dimension, default='height', help="""
-    The direction of the band.
+    The direction of the band can be specified by setting this property 
+    to ``height`` (``y`` direction) or ``dimension`` (``x`` direction). 
     """)
 
     source = Instance(DataSource, default=lambda: ColumnDataSource(), help="""
@@ -1041,9 +1044,3 @@ class Whisker(Annotation):
     """)
 
     level = Override(default="underlay")
-
-class ToolbarPanel(Annotation): # TODO: this shouldn't be an annotation
-
-    toolbar = Instance(".models.tools.Toolbar", help="""
-    A toolbar to display.
-    """)
